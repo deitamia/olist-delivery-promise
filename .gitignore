@@ -1,0 +1,26 @@
+# Raw data — not committed. See README for how to obtain it.
+# The source CSVs are ~65 MB and are public; a repo should hold the code
+# that transforms data, not a copy of someone else's dataset.
+data/raw/
+*.csv
+
+# Allow small reference tables that the analysis depends on
+!data/reference/*.csv
+
+# Power BI
+*.pbix.bak
+~$*.pbix
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
