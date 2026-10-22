@@ -148,10 +148,17 @@ person is meant. `customer_id` is used only to join.
 **Why it matters:** the same grain trap as issue 6. Joining reviews directly
 would duplicate those orders.
 
-**Decision:** to be resolved during modelling — either take the latest review
-per order or the lowest score. Choice and reasoning to be recorded here.
+**Decision:** reviews are aggregated to one row per order, carrying three
+fields rather than one: `n_reviews` (so the duplicates stay visible),
+`review_score_avg`, and `review_score_min`.
 
-**Status:** open.
+Picking a single "winning" review was rejected. Any rule for choosing one —
+latest, lowest, first — would discard information and would need defending.
+Keeping the count means an analyst can always exclude the 551 affected orders
+and check whether it changed the answer. At 0.6% of orders it almost certainly
+does not, but the option remains.
+
+**Status:** closed.
 
 ---
 
