@@ -87,10 +87,76 @@ the customer's delivered experience.
 
 ---
 
+## 6. `order_items` has more rows than `orders` — grain mismatch
+
+**Found:** 112,650 item rows covering 98,666 orders. One order contains 21 items.
+
+**Why it matters:** joining `orders` to `order_items` directly multiplies each
+order by its item count. Every delivery metric computed on that join would be
+weighted by basket size — a 21-item order would count 21 times toward the late
+rate. The output would look plausible and be wrong.
+
+**Decision:** aggregate `order_items` to one row per order *before* joining
+(count of items, count of distinct sellers, sum of price and freight). The
+analysis table holds exactly one row per order.
+
+**Status:** closed — handled in the model.
+
+---
+
+## 7. 775 orders have no item rows at all
+
+**Found:** `orders` holds 99,441 order_ids; `order_items` references only 98,666.
+
+**Cause:** most are cancelled or unavailable orders that never had items
+allocated.
+
+**Decision:** retained, with item counts and values as nulls rather than zeros —
+"unknown" is not the same as "zero". They are excluded from any value-weighted
+measure.
+
+**Status:** closed.
+
+---
+
+## 8. `customer_id` is not a customer
+
+**Found:** the `customers` table has 99,441 `customer_id` values and exactly
+99,441 orders — one per order. But it holds only 96,096 distinct
+`customer_unique_id` values.
+
+**What this means:** `customer_id` identifies an *order's* customer record, not
+a person. The real person is `customer_unique_id`. 3,345 orders were placed by
+someone who had ordered before.
+
+**Why it matters:** counting distinct `customer_id` would report 99,441
+customers when there are 96,096 — a 3.5% overstatement, and it would make
+repeat-purchase analysis impossible, since every repeat buyer would look new.
+
+**Decision:** `customer_unique_id` is carried into the model and used wherever a
+person is meant. `customer_id` is used only to join.
+
+**Status:** closed.
+
+---
+
+## 9. Duplicate reviews
+
+**Found:** `order_reviews` has 99,224 rows but only 98,673 distinct order_ids —
+551 orders carry more than one review.
+
+**Why it matters:** the same grain trap as issue 6. Joining reviews directly
+would duplicate those orders.
+
+**Decision:** to be resolved during modelling — either take the latest review
+per order or the lowest score. Choice and reasoning to be recorded here.
+
+**Status:** open.
+
+---
+
 ## Not yet checked
 
-- Duplicate `order_id` values
-- Orders with no matching rows in `order_items`
 - Products with a null category
-- Sellers or customers referenced by orders but absent from their own table
+- Sellers referenced by order items but absent from the `sellers` table
 - Extreme promise errors (the range runs to -146 and +189 days)
