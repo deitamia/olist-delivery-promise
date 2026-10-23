@@ -148,3 +148,47 @@ LEFT JOIN items_per_order i
 
 LEFT JOIN reviews_per_order r
   ON r.order_id = o.order_id;
+
+SELECT
+    CASE
+        WHEN promise_error_days >   0 THEN 'late (after promise)'
+        WHEN promise_error_days >  -5 THEN 'early by 0-5 days'
+        WHEN promise_error_days > -10 THEN 'early by 5-10 days'
+        WHEN promise_error_days > -20 THEN 'early by 10-20 days'
+        ELSE                               'early by 20+ days'
+    END AS promise_bucket,
+    COUNT(*) AS orders,
+    ROUND(100.0 * COUNT(*) /
+        (SELECT COUNT(*) FROM order_model WHERE promise_error_days IS NOT NULL), 1) AS pct
+FROM order_model
+WHERE promise_error_days IS NOT NULL
+GROUP BY promise_bucket
+ORDER BY MIN(promise_error_days);
+
+SELECT
+    customer_state,
+    COUNT(*)                            AS orders,
+    ROUND(AVG(promised_days), 1)        AS avg_promised,
+    ROUND(AVG(fulfilment_days), 1)      AS avg_actual,
+    ROUND(AVG(promise_error_days), 1)   AS avg_error,
+    ROUND(100.0 * AVG(is_late), 1)      AS late_pct
+FROM order_model
+WHERE promise_error_days IS NOT NULL
+GROUP BY customer_state
+HAVING COUNT(*) >= 300
+ORDER BY avg_error;
+
+SELECT
+    customer_state,
+    COUNT(*)                        AS orders,
+    ROUND(AVG(fulfilment_days), 1)  AS avg_days,
+    ROUND(SQRT(AVG(fulfilment_days * fulfilment_days)
+             - AVG(fulfilment_days) * AVG(fulfilment_days)), 1) AS sd_days,
+    ROUND(100.0 * AVG(CASE WHEN fulfilment_days > 30 THEN 1 ELSE 0 END), 1) AS pct_over_30d,
+    ROUND(100.0 * AVG(is_late), 1)  AS late_pct
+FROM order_model
+WHERE fulfilment_days IS NOT NULL
+GROUP BY customer_state
+HAVING COUNT(*) >= 300
+ORDER BY sd_days DESC;
+
