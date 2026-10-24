@@ -6,6 +6,25 @@ A delivery-promise analysis of **96,476 completed e-commerce orders**.
 
 ---
 
+## The dashboard
+
+Two pages, built in Power BI on the model below. Every chart title states the finding
+rather than naming the fields, so the report can be read without a walkthrough.
+
+**Page 1 — is the promise wrong?**
+
+![The promise](dashboard/01-the-promise.png)
+
+**Page 2 — where does the delay actually happen?**
+
+![Where the delay lives](dashboard/02-where-the-delay-lives.png)
+
+The report file is in [`dashboard/`](dashboard/). Open `olist-delivery-promise.pbix`
+in Power BI Desktop to inspect the measures, the calculated column that defines the
+tail band, and the model itself.
+
+---
+
 ## The question
 
 Most delivery analyses ask *"why are orders late?"* and answer with distance and
@@ -194,6 +213,12 @@ analysis that never contradicts its author is usually one that stopped looking.
   2018-09 to 2018-10 (all orders still in transit at the data cut-off). August
   2018 is included but understates lateness: 2.5% of its orders had not yet
   arrived.
+- **The 30-day tail threshold is a choice, not a property of the data.** It was fixed
+  before the stage breakdown was run, so it was not tuned to produce a result, but it
+  remains arbitrary. A different cut would change the size of the tail group and the
+  "94% of the excess" figure. The *direction* of the finding does not depend on it:
+  median dispatch time varies by only 0.3 days across all 21 states, so no threshold
+  makes dispatch the explanation.
 - **Reviews are a proxy.** They capture satisfaction among buyers, not revenue,
   and are influenced by product quality as well as delivery.
 
@@ -233,14 +258,16 @@ Every figure in this README is printed by the third command.
 ## Repository
 
 ```
-sql/01_order_model.sql      the model: eight tables to one row per order
-scripts/01_inspect.py       first look at the raw data
+sql/01_order_model.sql        the model: eight tables to one row per order
+sql/02_analysis_queries.sql   exploratory queries run against the model view
+scripts/01_inspect.py         first look at the raw data
 scripts/02_build_database.py  CSVs into SQLite, with date normalisation
-scripts/03_run_model.py     runs the model, validates grain, writes CSV
-scripts/04_create_view.py   registers the model as a database view
-scripts/05_analysis.py      all six analyses
-docs/issues-log.md          every data problem and what was decided
-outputs/                    summary tables (generated)
+scripts/03_run_model.py       runs the model, validates grain, writes CSV
+scripts/04_create_view.py     registers the model as a database view
+scripts/05_analysis.py        all six analyses
+dashboard/                    Power BI report (.pbix), PDF and page exports
+docs/issues-log.md            every data problem and what was decided
+outputs/                      summary tables (generated)
 ```
 
 A note on the structure: the modelling is SQL and the statistics are Python.
